@@ -32,7 +32,6 @@ def login(email, senha):
     return iq
 
 
-@st.cache
 def catalogar(frame, porcentagem):
     lista_horario = frame['inicio'].unique()
     dicionario = {}

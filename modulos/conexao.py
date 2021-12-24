@@ -35,9 +35,7 @@ class Conexao_Iq():
 
     def velas(self, ativo, timeframe, periodo, data):
         data = time.mktime(data.timetuple())
-
         periodo = ((60 * 24) / int(timeframe)) * int(periodo)
-        print(periodo)
         timeframe = int(timeframe) * 60
         dados = self._api.get_candles(
             ativo, timeframe, periodo, data)
@@ -65,7 +63,7 @@ class Conexao_Iq():
         return frame
 
     @staticmethod
-    def catalogar(frame):
+    def catalogar(frame, porcentagem=10):
         lista_horario = frame['inicio'].unique()
         dicionario = {}
         for l in lista_horario:
@@ -76,18 +74,20 @@ class Conexao_Iq():
             doji = frame.loc[(frame['inicio'] == l) & (
                 frame['direcao'] == 'doji')].shape[0]
             soma = (call+put+doji)
-            p_call, p_put, p_doji = (
-                call / soma) * 100, (put / soma) * 100, (doji / soma) * 100
-            dicionario.update(
-                {l: {'call': round(p_call, 2), 'put': round(p_put, 2), 'doji': round(p_doji, 2)}})
+            p_call, p_put, p_doji = (call / soma) * \
+                100, (put / soma) * 100, (doji / soma) * 100
+            if p_call >= porcentagem or p_put >= porcentagem or p_doji >= porcentagem:
+                dicionario.update(
+                    {l.strftime('%H:%M:%S'): {'call': round(p_call, 2), 'put': round(p_put, 2), 'doji': round(p_doji, 2)}})
             df = pd.DataFrame.from_dict(dicionario, orient='index')
         return df
 
 
 if __name__ == '__main__':
-    api = Conexao_Iq('kcfservicos95@gmail.com', '90576edkf')
+    api = Conexao_Iq()
+    api.login('kcfservicos95@gmail.com', '90576edkf')
     if api.checando() == 'Conectado':
-        dados = api.velas('EURUSD', 5, 10)
+        dados = api.velas('EURUSD-OTC', 1, 1, datetime.now())
         f = api.velas_frame(dados)
         d = api.catalogar(f)
         print(d)
