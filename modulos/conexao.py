@@ -1,3 +1,4 @@
+from datetime import datetime
 from iqoptionapi.stable_api import IQ_Option
 import streamlit as st
 import time
@@ -6,7 +7,10 @@ import numpy as np
 
 
 class Conexao_Iq():
-    def __init__(self, email, senha) -> None:
+    def __init__(self) -> None:
+        pass
+
+    def login(self, email, senha):
         self._api = IQ_Option(email, senha)
 
     def checando(self):
@@ -29,11 +33,14 @@ class Conexao_Iq():
             lista.append(k)
         return lista
 
-    def velas(self, ativo, timeframe, periodo):
+    def velas(self, ativo, timeframe, periodo, data):
+        data = time.mktime(data.timetuple())
+
         periodo = ((60 * 24) / int(timeframe)) * int(periodo)
+        print(periodo)
         timeframe = int(timeframe) * 60
         dados = self._api.get_candles(
-            ativo, timeframe, int(periodo), time.time())
+            ativo, timeframe, periodo, data)
         dicionario = {}
         for dado in dados:
             dicionario.update({dado['from']: dado})
