@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 import streamlit as st
 from modulos.conexao import Conexao_Iq
 import pandas as pd
@@ -32,6 +32,7 @@ def login(email, senha):
     return iq
 
 
+@st.cache
 def catalogar(frame, porcentagem):
     lista_horario = frame['inicio'].unique()
     dicionario = {}
@@ -64,7 +65,11 @@ if usuario and senha:
         st.sidebar.error(conectou)
 if conectou:
     st.sidebar.subheader('Ajustes para informações:')
-    data_inicio = st.sidebar.date_input('Data Inicial:', datetime.now())
+    data_input = st.sidebar.date_input('Data Inicial:', datetime.now().date())
+    hora_input = st.sidebar.time_input('Hora Inicial:', datetime.now().time())
+    if data_input and hora_input:
+        data_inicio = f'{data_input} {hora_input}'
+        data_inicio = datetime.fromisoformat(data_inicio)
     ativos = st.sidebar.multiselect('Selecione os ativos:', iq.listar_ativos())
     periodo = st.sidebar.number_input(
         'Selecione o periodo:', min_value=1, max_value=60)
@@ -80,7 +85,7 @@ if ativos and timeframe and periodo:
     for ativo in ativos:
         dic_velas = iq.velas(ativo, timeframe, periodo, data_inicio)
         fra_velas = velas_frame(dic_velas)
-        print(fra_velas.tail(10))
+        print(fra_velas)
         cata = catalogar(fra_velas, porcentagem)
         st.write(f'{ativo}')
         st.dataframe(cata)

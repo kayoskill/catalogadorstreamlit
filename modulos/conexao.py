@@ -35,16 +35,20 @@ class Conexao_Iq():
 
     def velas(self, ativo, timeframe, periodo, data):
         data = time.mktime(data.timetuple())
-        periodo = ((60 * 24) / int(timeframe)) * int(periodo)
-        timeframe = int(timeframe) * 60
-        dados = self._api.get_candles(
-            ativo, timeframe, periodo, data)
-        dicionario = {}
-        for dado in dados:
-            dicionario.update({dado['from']: dado})
-        return dicionario
 
-    @staticmethod
+        for p in range(1, periodo + 1):
+
+            data = time.mktime(data.timetuple())
+            periodo = ((60 * 24) / int(timeframe)) * int(periodo)
+            timeframe = int(timeframe) * 60
+            dados = self._api.get_candles(
+                ativo, timeframe, int(periodo), data)
+            dicionario = {}
+            for dado in dados:
+                dicionario.update({dado['from']: dado})
+            return dicionario
+
+    @ staticmethod
     def velas_frame(dicionario):
         frame = pd.DataFrame.from_dict(dicionario, orient='index')
         frame.drop(columns=['id', 'at'], inplace=True)
@@ -62,8 +66,8 @@ class Conexao_Iq():
             frame['abertura'] == frame['fechamento'], 'doji', np.where(frame['abertura'] > frame['fechamento'], 'call', 'put'))
         return frame
 
-    @staticmethod
-    def catalogar(frame, porcentagem=10):
+    @ staticmethod
+    def catalogar(frame, porcentagem):
         lista_horario = frame['inicio'].unique()
         dicionario = {}
         for l in lista_horario:
@@ -88,6 +92,7 @@ if __name__ == '__main__':
     api.login('kcfservicos95@gmail.com', '90576edkf')
     if api.checando() == 'Conectado':
         dados = api.velas('EURUSD-OTC', 1, 1, datetime.now())
+        print(dados)
         f = api.velas_frame(dados)
         d = api.catalogar(f)
         print(d)
