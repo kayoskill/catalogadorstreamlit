@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from iqoptionapi.stable_api import IQ_Option
 import streamlit as st
 import time
@@ -34,19 +34,18 @@ class Conexao_Iq():
         return lista
 
     def velas(self, ativo, timeframe, periodo, data):
-        data = time.mktime(data.timetuple())
-
-        for p in range(1, periodo + 1):
-
-            data = time.mktime(data.timetuple())
-            periodo = ((60 * 24) / int(timeframe)) * int(periodo)
-            timeframe = int(timeframe) * 60
+        timeframe = int(timeframe) * 60
+        dicionario = {}
+        for n in range(1, (1440 * periodo) + 1, timeframe):
+            data = data - timedelta(minutes=(timeframe / 60))
+            tempo = time.mktime(data.timetuple())
             dados = self._api.get_candles(
-                ativo, timeframe, int(periodo), data)
-            dicionario = {}
+                ativo, timeframe, 1, tempo)
             for dado in dados:
-                dicionario.update({dado['from']: dado})
-            return dicionario
+                if dado:
+                    dicionario.update({dado['from']: dado})
+
+        return dicionario
 
     @ staticmethod
     def velas_frame(dicionario):

@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from time import time
 import streamlit as st
 from modulos.conexao import Conexao_Iq
 import pandas as pd
@@ -57,31 +58,48 @@ st.sidebar.title('Painel de Configurações')
 st.sidebar.subheader('Acesso a conta IQ:')
 usuario = st.sidebar.text_input('Digite seu usuario:')
 senha = st.sidebar.text_input('Digite sua senha:', type='password')
-conectou, ativos, timeframe, periodo, data_inicio = False, False, False, False, False
+conectou, ativos, timeframe, periodo, data_inicio, iniciar = False, False, False, False, False, False
 if usuario and senha:
     iq = login(usuario, senha)
     conectou = iq.checando()
     if not conectou:
         st.sidebar.error(conectou)
+
 if conectou:
+    abrir = open('modulos/lista_ativos.txt', 'rb+')
+    ll_salva = []
+    if ll_salva:
+        for l in abrir.readlines():
+            ll_salva.append(l)
+        for l in iq.listar_ativos():
+            if not l in ll_salva:
+                abrir.write(f'{l}\n')
+    abrir.close()
+    abrir_lista = open('modulos/lista_ativos.txt')
+    lista_ativos = [x.replace('\n', '') for x in abrir_lista.readlines()]
+
     st.sidebar.subheader('Ajustes para informações:')
-    data_input = st.sidebar.date_input('Data Inicial:', datetime.now().date())
-    hora_input = st.sidebar.time_input('Hora Inicial:', datetime.now().time())
-    if data_input and hora_input:
-        data_inicio = f'{data_input} {hora_input}'
-        data_inicio = datetime.fromisoformat(data_inicio)
-    ativos = st.sidebar.multiselect('Selecione os ativos:', iq.listar_ativos())
-    periodo = st.sidebar.number_input(
+    ativos = st.sidebar.multiselect('Selecione os ativos:', lista_ativos)
+    periodo = st.sidebar.slider(
         'Selecione o periodo:', min_value=1, max_value=60)
-    timeframe = st.sidebar.selectbox('Selecione Timeframe:', [
+    timeframe = st.sidebar.select_slider('Selecione Timeframe:', [
         '1', '5', '15', '30', '60', '120'])
+    if timeframe:
+        data_input = st.sidebar.date_input(
+            'Data Inicial:', datetime.today().date())
+        hora_input = st.sidebar.text_input(
+            'Hora Inicial:', datetime.today().time().strftime('%H:%M'))
+        if data_input and hora_input:
+            data_inicio = f'{data_input} {hora_input}'
+            data_inicio = datetime.fromisoformat(data_inicio)
     porcentagem = st.sidebar.number_input(
         'Igual ou maior:', min_value=1.00, max_value=100.00)
+    iniciar = st.sidebar.button('Catalogar')
 
 # Centro
 st.title('Catalogador e Check-List')
 
-if ativos and timeframe and periodo:
+if iniciar:
     for ativo in ativos:
         dic_velas = iq.velas(ativo, timeframe, periodo, data_inicio)
         fra_velas = velas_frame(dic_velas)
